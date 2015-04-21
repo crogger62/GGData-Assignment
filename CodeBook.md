@@ -1,26 +1,22 @@
-CodeBook.md
- 3) a code book that describes the variables, the data, and any transformations or work that you performed to clean up the data called CodeBook.md
- ) Read 
 
+Getting & Cleaning Data - Course Assignment
+Code book
 
-GGData-Assignment
+This Codebook describes the steps needed to process data from the Human Activity 
+Recognition Using Smartphones Dataset as described in the course assignment. The Codebook 
+describes the variables, the data and the transformations needed to clean up the data. 
 
-This will be my readme file
-This one right here
+Data was downloaded from the following website: 
+  https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip 
 
-1) Merges the training and the test sets to create one data set.
-run_analysis (workdir)
-	workdir is thd directory 
-	
-	tables:
-	activityLabels - 6 rows x 2 columns
-	featuresTable - 561 rows x 2
-	
+The scripts assume that the file is unzipped into a working directory on the workstation. 
+The directory file structure is as follows (workdir is the top most directory for the 
+unzipped contents). 
 	
 	directory structure
 		workdir -> 
 			datadir -> 		
-				activity labels.txt - list of activities - 6 x 2
+				activity labels.txt - list of activities -
 				features_info.txt - descirbes variables 
 				features.txt - list of features 561 x 2
 				README.txt - describes data set
@@ -34,56 +30,107 @@ run_analysis (workdir)
 					X_train.txt - training set data 7352 x 561
 					y_train.txt - training set labels - 7352 x 1 -
 					Inertial Signals -> tbd
+	
+The README.txt file includes additional information regarding the data set. 
+Note the Inertial Signals directories found in the test and train directories are not used
+for this exercise as they are not required in the course assignment. 
+
+The objectives for processing the data are: 
+
+    1) Merges the training and the test sets to create one data set.
+    2) Extracts only the measurements on the mean and standard deviation for each 
+    	measurement. 
+    3) Uses descriptive activity names to name the activities in the data set
+    4) Appropriately labels the data set with descriptive variable names. 
+    5) Creates a second, independent tidy data set with the average variable
+       for each activity and each subject.
+    6) Writes the data set to a file: mean_by_subject_activity.txt in the current 
+       directory(as shown by get_wd) 
+
+Here are the steps required to complete this assignment: 
 				
-				
-Rows represent a measurement - 7352+2947 = 10,299 rows
-Columns consist of:
-1) Subject  - the number of the subject who performed the activity
-2) Label indicating if it is "TEST" or "TRAIN" depending on which data set it was pulled from
-3) Y Measure - 1 of these - read in as numbers and used lookup in activity_labels 
-4) X Measures - 561 of these
+1) Merges the training and the test sets to create one data set.
 
-a rows consists of 
-subject + "TEST/TRAIN" + y_test + x_test variables 
-num + text lable + num + num(x561)
+The script to run is: run_analysis(workdir=<directory where files were unzipped>)
+This script assumes the data appears in the original structure
 
-tidy_test_table is test_subjects + test_y + test_X
-tidy_train_table is train_subjects + test_y + test_X
+There is initial setup work to set the directory names into variable names for convenience.
 
+Read Activity Labels - The first step is to read the list of activity_labels form the 
+activity_labels.txt file. There are six consecutively numbered rows in the file. The 
+data is read into a data.frame using read.table function. The names for the data.frame
+columns are then set.
 
-2) Extracts only the measurements on the mean and standard deviation for each measurement.
+Read Features - The next step reads in the features.txt file into a data.frame using 
+read.table. There are 561 feature labels in this file. The names for the features data
+frame are then set.
 
-mean - 46 measurements in table
-std - 33 measurements in table
+Read Test data - Next the subject_test.txt, X_test.txt and y_test.txt files are read. 
 
-Problems with duplicate column names and select:
-	http://stackoverflow.com/questions/28549045/dplyr-select-error-found-duplicated-column-name
+*  subject_test.txt is a list of the subjects used to carry out the measurements. 
+*  X_test.txt are the activities carried out by the subject. There is one number for each 
+feature (so there are 561 per row matching the feature.txt file length)
+* y_test.txt file consists of numbers that correspond to the activity labels so 
+another data.frame is built out replacing the numbers from y_test with the corresponding
+labels from Activity labels.  This new table is called labeled_train_y
 
- 
-extract_Data <- select(.data = master_merge, subjectID, activity_ID,
-                           contains("mean\\(\\)"), contains("std\\(\\)"))
-    duplicates: your_merged_data_with_column_names[,400:420]
+A data frame of the test results is then built by column binding:
+   test_subject + "TEST" + labeled_train_y (labels associated with y_test) + X_test 
+The column names are then set
 
+Read Train data - This step repeats the step for Test data except that "TRAIN" is used in
+building out the data frame rather than "TEST
 
-Maybe an answer to a different question: 
-Before you assign the column names filter out the columns by getting a list of indices using
-	meanStdColumns <- grep("mean|std", features$V2, value = FALSE)
-and then assign the columns names using
-	meanStdColumnsNames <- grep("mean|std", features$V2, value = TRUE)
+Now there is one data set comprised of the Test and the Train data sets including the
+subjects, their activities and the 561 measurements labeled according to features.txt.
 
-Threads:
-http://stackoverflow.com/questions/10689055/create-an-empty-data-frame
-             http://stackoverflow.com/questions/10150579/adding-a-column-to-a-data-frame
-             http://stackoverflow.com/questions/28549045/dplyr-select-error-found-duplicated-column-name
-                   
-                           
-Wide vs narrow
+phew
 
+2) Extracts only the measurements on the mean and standard deviation for each measurement
 
-4) 
-From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+To start, we identify the features that include the phrases "mean" and "std" by using
+grep to search the names of the table built in step 1. These are extracted into two 
+different vectors corresponding to the mean and the std. 
 
-so the table would like 
-variableA SubjectA ave-var-1-LABEL averagevalue-var-1
+Next the subjects, activities and Test/Train column are copied into a new data.frame. 
+The script then column binds first the feature vectors for the mean (using the vectors
+in the preceding paragraph). This is repeated for the std feature vectors 
 
+Now there is a new data.frame that includes:
+  test_subject + "TEST"/"TRAIN" + Activity Label + Feature data corresponding to mean/std
 
+3) Uses descriptive activity names to name the activities in the data set
+In reading the test/train data sets, there is an explicit step to replace the number (found
+in y_test.txt) with the corresponding label in the Activity Label file. These remain all
+the way through to the last processing step.
+
+4) Appropriately labels the data set with descriptive variable names. 
+Throughout this script the columns are named as follows:
+  subjects are labled subjects when initially read and this label remains as they are copied
+  activity label columns is called "Activities"
+  TEST/TRAIN column is called "Test/Train"
+  The 561 columns of features data are labeled based on the entires in the features.txt file
+  in one to one correspondence. Sadly, there are duplicate column names in this list making
+  some processing difficult however since the end result did not rely on these columns, the
+  duplicates were ignored (left as is) in the data set.
+  
+5) Creates a second, independent tidy data set with the average variable  for each activity 
+and each subject.  
+
+To build this data set we want to output as follows:
+
+Subject + Activity Labeled + Feature Label + mean of the feature variables corresponding 
+												to the Subject & Activity
+												
+To do this the dplyr library is loaded so we can use the filter command. 
+First we know there are six Activities (nrow of activityLabels) and we can use unique to
+get the number of subjects (30). Next we run through all six activities and all thirty
+(6 x 30) and use filter to extract the record that are for a Subject and an Activity.  
+Note there are cases where the Subject did not complete an activity so we check for this. 
+
+Next we go through the list of mean/std columns (also copied over) and calculate the mean. 
+With this we have the Subject, Activity Label, Feature Label (name of column) and the 
+calculated mean. This is added to a data frame.
+
+To complete this exercise the data frame created in the preceding step is written to a 
+file and has been uploaded as part of the submission to this assignment. 
