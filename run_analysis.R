@@ -46,7 +46,7 @@ names(featuresTable)[2]<-"label"
 # 
 # Read test data - start with the list of subjects, then the X variables and then the y/activity labels
 #
-print("building test\n")
+print("building test")
 test_subjects<-read.table(paste0(testdir,"subject_test.txt"))
 test_X<-read.table(paste0(testdir,"X_test.txt"))
 test_y<-read.table(paste0(testdir,"y_test.txt"))
@@ -68,12 +68,12 @@ tidy_test_table<-cbind(test_subjects,"TEST",labeled_test_y,test_X)
 names(tidy_test_table)[2]<-"Test/Train"
 names(tidy_test_table)[3]<-"Activities"
 
-print("built test\n")
+print("built test")
 #
 # Since the training and test data are symmetric we'll do the same thing for the training data
 # read training data - start with list of subjects, then X variabels and the y/activity label
 #
-print("Building train\n")
+print("building train")
 train_subjects<-read.table(paste0(traindir,"subject_train.txt"))
 train_y<-read.table(paste0(traindir,"y_train.txt"))
 train_X<-read.table(paste0(traindir,"X_train.txt"))
@@ -88,7 +88,7 @@ for (i in 1:nrow(train_y)) {
 tidy_train_table<-cbind(train_subjects,"TRAIN",train_y,train_X)
 names(tidy_train_table)[2]<-"Test/Train"
 names(tidy_train_table)[3]<-"Activities"
-print("Built train\n")
+print("built train")
 
 #
 # Create the table merging test and train datas
@@ -100,7 +100,6 @@ tidy_table<-rbind(tidy_test_table,tidy_train_table)
 names(tidy_table)[1]<-"Subject"
 # Next column, test/train set in preceding steps
 
-names(tidy_train_table)[1]<-"Subjects"
 
 #
 # Column 4 - 564 are the observations
@@ -139,12 +138,54 @@ for(i in 1:length(stdLabels)) {
   table_index=table_index + 1
   
 }
-# tidy_data_set with means/stds
+
+mean_std_table_width<-length(stdLabels) + length(meanLabels)
+# tidy_data_set with means/stds completed
+
+# now for each activity and each subject output the average 
+
 #write.file(mean_std_table,"mean_std_table.txt",row.name=FALSE)
 
 library(dplyr)
-6 activities
-30 subjects
+uniqueSubject<-unique(mean_std_table$Subject)
 
+# recall activityLabels$label contains list of activity labels
+#6 activities
+#30 subjects
+table_index<-1
+
+mean_by_subject_activity<-data.frame(Activity=character(),Subject=numeric(),
+                                      Measurement=character(),Mean=numeric())
+#names(mean_by_subject_activity)<-c("Activity","Subject","Measurement","Mean")
+
+for (i in 1:length(activityLabels$label)) {
+  for (j in 1:length(uniqueSubject)){
+      thisActivity<-activityLabels$label[i]
+      thisSubject<-uniqueSubject[j]
+     # print(paste(thisActivity,thisSubject))
+      
+      tempTable<-filter(mean_std_table,
+                        mean_std_table$Subject == thisSubject & mean_std_table$Activities == thisActivity)
+      ##debug
+      if (thisSubject == 1){
+        print("stopping")
+      }
+      ##debug
+     if (nrow(tempTable)>0) {
+       for(k in 1:mean_std_table_width) {
+          thisLabel<-names(tempTable)[k+3]
+          thisMean<-mean(tempTable[[k+3]])
+          mean_by_subject_activity <-rbind(mean_by_subject_activity,
+               data.frame("Activity"= thisActivity, "Subject"= thisSubject, 
+                       "Measurement"=thisLabel, "Mean"=thisMean))
+          }
+       }
+        
+    }
+
+
+  }
+write.table(mean_by_subject_activity,"mean_by_subject_activity.txt",row.name=FALSE)
 
 }
+
